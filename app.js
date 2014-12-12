@@ -4,10 +4,17 @@ var logger = require("morgan");
 var cookieParser = require("cookie-parser");
 var bodyParser = require("body-parser");
 
+<<<<<<< HEAD
 var routes = require('./routes/index');
 var avatars = require('./routes/avatars');
 var skins = require('./routes/skins');
 var renders = require('./routes/renders');
+=======
+var routes = require("./routes/index");
+var avatars = require("./routes/avatars");
+var skins = require("./routes/skins");
+var capes = require("./routes/capes");
+>>>>>>> Implement Skeleton for Returning Capes (Currently returns skins)
 
 var app = express();
 
@@ -21,10 +28,18 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
+<<<<<<< HEAD
 app.use('/', routes);
 app.use('/avatars', avatars);
 app.use('/skins', skins);
 app.use('/renders', renders);
+=======
+app.use("/", routes);
+app.use("/avatars", avatars);
+app.use("/skins", skins);
+app.use("/capes", capes);
+
+>>>>>>> Implement Skeleton for Returning Capes (Currently returns skins)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
