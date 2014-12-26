@@ -1,9 +1,7 @@
-var networking = require("../modules/networking");
 var logging = require("../modules/logging");
 var helpers = require("../modules/helpers");
 var config = require("../modules/config");
 var router = require("express").Router();
-var skins = require("../modules/skins");
 var lwip = require("lwip");
 
 /* GET skin request. */
@@ -41,34 +39,15 @@ router.get("/:uuid.:ext?", function (req, res) {
         logging.log("status: " + http_status);
         sendimage(http_status, image);
       } else {
-        handle_default(404);
+        res.status(404).send("404 not found");
       }
     });
   } catch (e) {
     logging.error("Error!");
     logging.error(e);
-    handle_default(500);
+    res.status(500).send("500 error while retrieving cape");
   }
 
-  function handle_default(http_status) {
-    if (def && def != "steve" && def != "alex") {
-      res.writeHead(301, {
-        "Cache-Control": "max-age=" + config.browser_cache_time + ", public",
-        "Response-Time": new Date() - start,
-        "X-Storage-Type": "downloaded",
-        "Access-Control-Allow-Origin": "*",
-        "Location": def
-      });
-      res.end();
-    } else {
-      def = def || skins.default_skin(uuid);
-      lwip.open("public/images/" + def + "_skin.png", function (err, image) {
-        image.toBuffer("png", function (err, buffer) {
-          sendimage(http_status, buffer);
-        });
-      });
-    }
-  }
 
   function sendimage(http_status, image) {
     res.writeHead(http_status, {
