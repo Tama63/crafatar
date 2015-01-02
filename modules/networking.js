@@ -8,9 +8,11 @@ var session_url = "https://sessionserver.mojang.com/session/minecraft/profile/";
 var skins_url = "https://skins.minecraft.net/MinecraftSkins/";
 var capes_url = "https://skins.minecraft.net/MinecraftCloaks/";
 
+var exp = {};
+
 // exracts the skin url of a +profile+ object
 // returns null when no url found (user has no skin)
-function extract_skin_url(profile) {
+exp.extract_skin_url = function(profile) {
   var url = null;
   if (profile && profile.properties) {
     profile.properties.forEach(function(prop) {
@@ -24,7 +26,9 @@ function extract_skin_url(profile) {
   return url;
 }
 
-function extract_cape_url(profile) {
+// exracts the cape url of a +profile+ object
+// returns null when no url found (user has no cape)
+exp.extract_cape_url = function(profile) {
   var url = null;
   if (profile && profile.properties) {
     profile.properties.forEach(function(prop) {
@@ -38,95 +42,122 @@ function extract_cape_url(profile) {
   return url;
 }
 
-// make a request to skins.miencraft.net
-// the skin url is taken from the HTTP redirect
-var get_username_url = function(name, callback) {
+// makes a GET request to the +url+
+// +options+ hash includes various options for
+// encoding and timeouts, defaults are already
+// specified. +callback+ contains the body, response,
+// and error buffer. get_from helper method is available
+exp.get_from_options = function(url, options, callback) {
   request.get({
-    url: skins_url + name + ".png",
+    url: url,
     headers: {
       "User-Agent": "https://crafatar.com"
     },
-    timeout: config.http_timeout,
-    followRedirect: false
+    timeout: options['timeout'] || config.http_timeout,
+    encoding: options['encoding'] || null,
+    followRedirect: options['followRedirect'] || false
   }, function(error, response, body) {
-    if (!error && response.statusCode == 301) {
+    if (!error && response.statusCode == 200) {
       // skin_url received successfully
-      logging.log(name + " skin url received");
-      callback(null, response.headers.location);
+      logging.log(url + " url received");
+      callback(body, response, error);
     } else if (error) {
-      callback(error, null);
+      callback(error, response, null);
     } else if (response.statusCode == 404) {
       // skin (or user) doesn't exist
-      logging.log(name + " has no skin");
-      callback(null, null);
+      logging.log(url + " url does not exist");
+      callback(null, response, null);
     } else if (response.statusCode == 429) {
       // Too Many Requests
       // Never got this, seems like skins aren't limited
       logging.warn(body || "Too many requests");
-      callback(null, null);
+      callback(null, response, null);
     } else {
-      logging.error(name + " Unknown error:");
-      logging.error(response);
-      callback(body || "Unknown error", null);
+      logging.error(url + " Unknown error:");
+      //logging.error(response);
+      callback(body || "Unknown error", response, null);
     }
   });
+};
+
+// helper method for get_from_options, no options required
+exp.get_from = function(url, callback) {
+  exp.get_from_options(url, {}, function(body, response, err) {
+    callback(body, response, err);
+  });
+};
+
+// specifies which numbers identify what url
+var mojang_url_types = {
+  1: skins_url,
+  2: capes_url
+};
+
+// make a request to skins.miencraft.net
+// the skin url is taken from the HTTP redirect
+// type 1 is skins, type 2 is capes
+var get_username_url = function(name, type, callback) {
+  exp.get_from(mojang_url_types[type] + name + ".png", function(body, response, err) {
+    if (!err) {
+      callback(err, response ? (response.statusCode == 404 ? null : response.headers.location) : null);
+    } else {
+      callback(err, null);
+    }
+  })
+};
+
+// gets the URL for a skin/cape from the profile
+// +type+ specifies which to retrieve
+var get_uuid_url = function(profile, type, callback) {
+  if (type == 1) {
+    callback(exp.extract_skin_url(profile));
+  } else if (type == 2) {
+    callback(exp.extract_cape_url(profile));
+  }
 };
 
 // make a request to sessionserver
-// the skin_url is taken from the profile
-var get_uuid_url = function(uuid, callback) {
-  request.get({
-    url: session_url + uuid,
-    headers: {
-      "User-Agent": "https://crafatar.com"
-    },
-    timeout: config.http_timeout // ms
-  }, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      // profile downloaded successfully
-      logging.log(uuid + " profile downloaded");
-      callback(null, extract_skin_url(JSON.parse(body)));
-    } else if (error) {
-      callback(error, null);
-    } else if (response.statusCode == 204 || response.statusCode == 404) {
-      // we get 204 No Content when UUID doesn't exist (including 404 in case they change that)
-      logging.log(uuid + " uuid does not exist");
-      callback(null, null);
-    } else if (response.statusCode == 429) {
-      // Too Many Requests
-      callback(body || "Too many requests", null);
-    } else {
-      logging.error(uuid + " Unknown error:");
-      logging.error(response);
-      callback(body || "Unknown error", null);
-    }
-  });
+// profile is returned as json
+exp.get_profile = function(uuid, callback) {
+  if (uuid == null) {
+    callback(null, null);
+  } else {
+    exp.get_from(session_url + uuid, response, function(body, err) {
+      callback(err, JSON.parse(body));
+    }); 
+  }
 };
 
-var exp = {};
+// todo remove middleman
 
-// download skin_url for +uuid+ (name or uuid)
-// callback contains error, skin_url
-exp.get_skin_url = function(uuid, callback) {
+// +uuid+ is likely a username and if so
+// +uuid+ is used to get the url, otherwise
+// +profile+ will be used to get the url
+exp.get_skin_url = function(uuid, profile, callback) {
   if (uuid.length <= 16) {
-    get_username_url(uuid, function(err, url) {
-      callback(err, url);
+    //username
+    get_username_url(uuid, 1, function(err, url) {
+      callback(url);
     });
   } else {
-    get_uuid_url(uuid, function(err, url) {
-      callback(err, url);
+    get_uuid_url(profile, 1, function(url) {
+      callback(url);
     });
   }
 };
 
-exp.get_cape_url = function(uuid, callback) {
+// +uuid+ is likely a username and if so
+// +uuid+ is used to get the url, otherwise
+// +profile+ will be used to get the url
+exp.get_cape_url = function(uuid, profile, callback) {
   if (uuid.length <= 16) {
-    get_username_url(uuid, function(err, url) {
-      callback(err, url);
+    //username
+    get_username_url(uuid, 2, function(err, url) {
+      callback(url);
     });
   } else {
-    get_uuid_url(uuid, function(err, url) {
-      callback(err, url);
+    get_uuid_url(profile, 2, function(url) {
+      callback(url);
     });
   }
 };
@@ -134,44 +165,15 @@ exp.get_cape_url = function(uuid, callback) {
 // downloads skin file from +url+
 // callback contains error, image
 exp.get_skin = function(url, callback) {
-  request.get({
-    url: url,
-    headers: {
-      "User-Agent": "https://crafatar.com"
-    },
-    encoding: null, // encoding must be null so we get a buffer
-    timeout: config.http_timeout // ms
-  }, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      // skin downloaded successfully
-      logging.log("downloaded skin");
-      logging.debug(url);
-      callback(null, body);
-    } else {
-      if (error) {
-        logging.error("Error downloading '" + url + "': " + error);
-      } else if (response.statusCode == 404) {
-        logging.warn("texture not found (404): " + url);
-      } else if (response.statusCode == 429) {
-        // Too Many Requests
-        // Never got this, seems like textures aren't limited
-        logging.warn("too many requests for " + url);
-        logging.warn(body);
-      } else {
-        logging.error("unknown error for " + url);
-        logging.error(response);
-        logging.error(body);
-        error = "unknown error"; // Error needs to be set, otherwise null in callback
-      }
-      callback(error, null);
-    }
+  exp.get_from(url, response, function(body, err) {
+    callback(body, err);
   });
 };
 
 exp.save_skin = function(uuid, hash, outpath, callback) {
   if (hash) {
     var skinurl = "http://textures.minecraft.net/texture/" + hash;
-    exp.get_skin(skinurl, function(err, img) {
+    exp.get_from(skinurl, response, function(img, err) {
       if (err) {
         logging.error("error while downloading skin");
         callback(err, null);
@@ -190,35 +192,8 @@ exp.save_skin = function(uuid, hash, outpath, callback) {
 };
 
 exp.get_cape = function(url, callback) {
-  request.get({
-    url: url,
-    headers: {
-      "User-Agent": "https://crafatar.com"
-    },
-    encoding: null, // encoding must be null so we get a buffer
-    timeout: config.http_timeout // ms
-  }, function (error, response, body) {
-    if (!error && response.statusCode == 200) {
-      // cape downloaded successfully
-      logging.log("downloaded cape");
-      logging.debug(url);
-      callback(null, body);
-    } else {
-      if (error) {
-        logging.error("Error downloading '" + url + "': " + error);
-      } else if (response.statusCode == 404) {
-        logging.warn("texture not found (404): " + url);
-      } else if (response.statusCode == 429) {
-        logging.warn("too many requests for " + url);
-        logging.warn(body);
-      } else {
-        logging.error("unknown error for " + url);
-        logging.error(response);
-        logging.error(body);
-        error = "unknown error"; // Error needs to be set, otherwise null in callback
-      }
-      callback(error, null);
-    }
+  exp.get_from(url, response, function(body, err) {
+    callback(err, body);
   });
 };
 
