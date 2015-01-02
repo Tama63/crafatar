@@ -192,7 +192,7 @@ exp.save_skin = function(uuid, hash, outpath, callback) {
 };
 
 exp.get_cape = function(url, callback) {
-  exp.get_from(url, response, function(body, err) {
+  exp.get_from(url, function(body, response, err) {
     callback(err, body);
   });
 };

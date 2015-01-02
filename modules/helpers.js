@@ -31,13 +31,13 @@ function store_images(uuid, details, whichhash, callback) {
         var hashes = {}
         for (i = 0; i < urls.length; i++) {
           var url = urls[i];
-          logging.debug("URL: " + url)
+          logging.debug("URL: " + url);
           if (url) {
             var hash = get_hash(url);
             var raw_type = (url == skin_url ? "skin" : "cape");
             var type = details != null ? (url == urls[0] ? details.skin : details.cape) : null;
             if (details && type == hash) {
-              logging.log(uuid + " hash has not changed for " + raw_type)
+              logging.log(uuid + " hash has not changed for " + raw_type);
               cache.update_timestamp(uuid, hash);
               if (whichhash == raw_type) {
                 callback(null, hash);
@@ -81,6 +81,18 @@ function store_images(uuid, details, whichhash, callback) {
                       });
                     }
                   });
+                } else if (raw_type == 'cape') {
+                  networking.get_from(cape_url, function(img, response, err) {
+                    logging.log(uuid + " downloaded cape");
+                    if (err || !img) {
+                      callback(err, null);
+                    } else {
+                      skins.save_image(img, verifypath, function(err, image) {
+                        logging.log(uuid + " cape saved");
+                        callback(err, hash);
+                      });
+                    }
+                  });
                 }
               }
             }
@@ -88,8 +100,8 @@ function store_images(uuid, details, whichhash, callback) {
         }
         cache.save_hash(uuid, hashes['skin'], hashes['cape']);
       });
-    });
-  });
+});
+});
 };
 
 
@@ -237,22 +249,22 @@ exp.get_render = function(uuid, scale, helm, body, callback) {
   });
 };
 
-exp.get_cape = function(uuid, callback) {
+// handles requests for +uuid+ capes
+// callback contains error, hash, image buffer
+exp.get_skin = function(uuid, callback) {
   logging.log(uuid + " cape request");
   exp.get_image_hash(uuid, 'cape', function(err, status, hash) {
-    if (hash) {
-      var capeurl = "http://textures.minecraft.net/texture/" + hash;
-      networking.get_cape(capeurl, function(err, img) {
-        if (err) {
-          logging.error("error while downloading cape");
-          callback(err, hash, null);
-        } else {
-          callback(null, hash, img);
-        }
+    var capepath = __dirname + "/../" + config.capes_path + hash + ".png";
+    if (fs.existsSync(capepath)) {
+      logging.log("cape already exists, not downloading");
+      skins.open_skin(capepath, function(err, img) {
+        callback(err, hash, img);
       });
-    } else {
-      callback(err, null, null);
+      return;
     }
+    networking.save_skin(uuid, hash, capepath, function(err, img) {
+      callback(err, hash, img);
+    });
   });
 };
 
