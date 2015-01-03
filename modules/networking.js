@@ -48,7 +48,6 @@ exp.extract_cape_url = function(profile) {
 // specified. +callback+ contains the body, response,
 // and error buffer. get_from helper method is available
 exp.get_from_options = function(url, options, callback) {
-  console.log(options["timeout"] || config.http_timeout)
   logging.log("requesting url " + url);
   request.get({
     url: url,
@@ -64,7 +63,7 @@ exp.get_from_options = function(url, options, callback) {
       logging.log(url + " url received");
       callback(body, response, error);
     } else if (error) {
-      callback(error, response, null);
+      callback(null, response, error);
     } else if (response.statusCode == 404) {
       // skin (or user) doesn't exist
       logging.log(url + " url does not exist");
@@ -78,7 +77,7 @@ exp.get_from_options = function(url, options, callback) {
       logging.error(url + " Unknown error:");
       logging.log(response.statusCode)
       //logging.error(response);
-      callback(body || "Unknown error", response, null);
+      callback(body || "Unknown error", response, error);
     }
   });
 };
@@ -98,7 +97,7 @@ var mojang_url_types = {
 
 // make a request to skins.miencraft.net
 // the skin url is taken from the HTTP redirect
-// type 1 is skins, type 2 is capes
+// type reference is above
 exp.get_username_url = function(name, type, callback) {
   exp.get_from(mojang_url_types[type] + name + ".png", function(body, response, err) {
     if (!err) {
