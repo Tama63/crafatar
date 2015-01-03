@@ -48,6 +48,7 @@ exp.extract_cape_url = function(profile) {
 // specified. +callback+ contains the body, response,
 // and error buffer. get_from helper method is available
 exp.get_from_options = function(url, options, callback) {
+  console.log(options["timeout"] || config.http_timeout)
   logging.log("requesting url " + url);
   request.get({
     url: url,
@@ -98,7 +99,7 @@ var mojang_url_types = {
 // make a request to skins.miencraft.net
 // the skin url is taken from the HTTP redirect
 // type 1 is skins, type 2 is capes
-var get_username_url = function(name, type, callback) {
+exp.get_username_url = function(name, type, callback) {
   exp.get_from(mojang_url_types[type] + name + ".png", function(body, response, err) {
     if (!err) {
       callback(err, response ? (response.statusCode == 404 ? null : response.headers.location) : null);
@@ -110,7 +111,7 @@ var get_username_url = function(name, type, callback) {
 
 // gets the URL for a skin/cape from the profile
 // +type+ specifies which to retrieve
-var get_uuid_url = function(profile, type, callback) {
+exp.get_uuid_url = function(profile, type, callback) {
   if (type == 1) {
     callback(exp.extract_skin_url(profile));
   } else if (type == 2) {
@@ -125,7 +126,7 @@ exp.get_profile = function(uuid, callback) {
     callback(null, null);
   } else {
     exp.get_from(session_url + uuid, function(body, response, err) {
-      callback(err, JSON.parse(body));
+      callback(err, (body != null ? JSON.parse(body) : null));
     }); 
   }
 };
@@ -138,11 +139,11 @@ exp.get_profile = function(uuid, callback) {
 exp.get_skin_url = function(uuid, profile, callback) {
   if (uuid.length <= 16) {
     //username
-    get_username_url(uuid, 1, function(err, url) {
+    exp.get_username_url(uuid, 1, function(err, url) {
       callback(url);
     });
   } else {
-    get_uuid_url(profile, 1, function(url) {
+    exp.get_uuid_url(profile, 1, function(url) {
       callback(url);
     });
   }
@@ -154,11 +155,11 @@ exp.get_skin_url = function(uuid, profile, callback) {
 exp.get_cape_url = function(uuid, profile, callback) {
   if (uuid.length <= 16) {
     //username
-    get_username_url(uuid, 2, function(err, url) {
+    exp.get_username_url(uuid, 2, function(err, url) {
       callback(url);
     });
   } else {
-    get_uuid_url(profile, 2, function(url) {
+    exp.get_uuid_url(profile, 2, function(url) {
       callback(url);
     });
   }

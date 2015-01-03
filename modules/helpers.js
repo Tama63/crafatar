@@ -181,6 +181,7 @@ exp.get_image_hash = function(uuid, raw_type, callback) {
 exp.get_avatar = function(uuid, helm, size, callback) {
   logging.log("\nrequest: " + uuid);
   exp.get_image_hash(uuid, "skin", function(err, status, hash) {
+    console.log("CALLED BACK");
     if (hash) {
       var facepath = __dirname + "/../" + config.faces_dir + hash + ".png";
       var helmpath = __dirname + "/../" + config.helms_dir + hash + ".png";
