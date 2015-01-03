@@ -33,13 +33,10 @@ function store_images(uuid, details, whichhash, callback) {
           var url = urls[i];
           (function(url) {
             logging.debug("URL: " + url);
-            console.log("TYPE: " + typeof(url))
             var raw_type = (url == skin_url ? "skin" : "cape");
             if (url != null) {
-              console.log("DID I LOG AS NULL AND STILL GET EHRE?1?! " + url)
               var hash = get_hash(url);
-              console.log("WE HAVE " + raw_type + " AND LOOKING FOR " + whichhash);
-              logging.debug("TYPE IS: " + raw_type)
+              logging.debug("Type is: " + raw_type)
               var type = details != null ? (url == urls[0] ? details.skin : details.cape) : null;
               if (details && type == hash) {
                 logging.log(uuid + " hash has not changed for " + raw_type);
@@ -52,7 +49,6 @@ function store_images(uuid, details, whichhash, callback) {
                 var verifypath = null;
                 var facepath = null;
                 var helmpath = null;
-                console.log("RAW_TYPE: " + raw_type)
                 if (raw_type == "skin") {
                   facepath = __dirname + "/../" + config.faces_dir + hash + ".png";
                   helmpath = __dirname + "/../" + config.helms_dir + hash + ".png";
@@ -68,7 +64,6 @@ function store_images(uuid, details, whichhash, callback) {
                   }
                 } else {
                   if (raw_type == "skin") {
-                    console.log("RUNNING ")
                     networking.get_from(skin_url, function(img, response, err) {
                       if (err || !img) {
                         if (raw_type == whichhash) {
@@ -96,7 +91,7 @@ function store_images(uuid, details, whichhash, callback) {
                       }
                     });
                   } else if (raw_type == "cape") {
-                    console.log("CAPE URL: " + cape_url)
+                    logging.debug("Cape url: " + cape_url)
                     networking.get_from(cape_url, function(img, response, err) {
                       logging.log(uuid + " downloaded cape");
                       if (err || !img) {
@@ -117,9 +112,7 @@ function store_images(uuid, details, whichhash, callback) {
                 }
               }
             } else {
-              console.log(" I AM HERE!!!")
               if (whichhash == raw_type) {
-                console.log("IS INDEED CALLING TO HERE")
                 callback(null, null);
               }
             }
@@ -164,7 +157,6 @@ exp.get_image_hash = function(uuid, raw_type, callback) {
           logging.log(uuid + " uuid not cached");
         }
         store_images(uuid, details, raw_type, function(err, hash) {
-          console.log("ATTEMPTING TO STORE IMAGES FOR " + raw_type);
           if (err) {
             callback(err, -1, details && type);
           } else {
@@ -187,7 +179,6 @@ exp.get_image_hash = function(uuid, raw_type, callback) {
 // image is the user's face+helm when helm is true, or the face otherwise
 // for status, see get_image_hash
 exp.get_avatar = function(uuid, helm, size, callback) {
-  console.log("CALLED")
   logging.log("\nrequest: " + uuid);
   exp.get_image_hash(uuid, "skin", function(err, status, hash) {
     if (hash) {
@@ -281,7 +272,6 @@ exp.get_skin = function(uuid, callback) {
 exp.get_cape = function(uuid, callback) {
   logging.log(uuid + " cape request");
   exp.get_image_hash(uuid, "cape", function(err, status, hash) {
-    console.log("CAPE IMAGE HASH:" + hash)
     if (!hash) {
       callback(err, null, null);
       return;
