@@ -2,12 +2,10 @@ var logging = require("../modules/logging");
 var helpers = require("../modules/helpers");
 var config = require("../modules/config");
 var router = require("express").Router();
-var lwip = require("lwip");
 
-/* GET skin request. */
+/* GET cape request. */
 router.get("/:uuid.:ext?", function (req, res) {
   var uuid = (req.params.uuid || "");
-  var def = req.query.default;
   var start = new Date();
   var etag = null;
 
@@ -48,7 +46,6 @@ router.get("/:uuid.:ext?", function (req, res) {
     res.status(500).send("500 error while retrieving cape");
   }
 
-
   function sendimage(http_status, image) {
     res.writeHead(http_status, {
       "Content-Type": "image/png",
@@ -61,6 +58,5 @@ router.get("/:uuid.:ext?", function (req, res) {
     res.end(http_status == 304 ? null : image);
   }
 });
-
 
 module.exports = router;

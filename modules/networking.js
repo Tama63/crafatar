@@ -53,9 +53,9 @@ exp.get_from_options = function(url, options, callback) {
     headers: {
       "User-Agent": "https://crafatar.com"
     },
-    timeout: options['timeout'] || config.http_timeout,
-    encoding: options['encoding'] || null,
-    followRedirect: options['followRedirect'] || false
+    timeout: options["timeout"] || config.http_timeout,
+    encoding: options["encoding"] || null,
+    followRedirect: options["followRedirect"] || false
   }, function(error, response, body) {
     if (!error && response.statusCode == 200) {
       // skin_url received successfully
@@ -122,7 +122,7 @@ exp.get_profile = function(uuid, callback) {
   if (uuid == null) {
     callback(null, null);
   } else {
-    exp.get_from(session_url + uuid, response, function(body, err) {
+    exp.get_from(session_url + uuid, function(body, response, err) {
       callback(err, JSON.parse(body));
     }); 
   }
@@ -173,12 +173,12 @@ exp.get_skin = function(url, callback) {
 exp.save_skin = function(uuid, hash, outpath, callback) {
   if (hash) {
     var skinurl = "http://textures.minecraft.net/texture/" + hash;
-    exp.get_from(skinurl, response, function(img, err) {
+    exp.get_from(skinurl, function(img, response, err) {
       if (err) {
         logging.error("error while downloading skin");
         callback(err, null);
       } else {
-        fs.writeFile(outpath, img, 'binary', function(err){
+        fs.writeFile(outpath, img, "binary", function(err) {
           if (err) {
             logging.log(err);
           }

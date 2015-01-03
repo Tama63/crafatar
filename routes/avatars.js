@@ -15,6 +15,7 @@ var human_status = {
 
 /* GET avatar request. */
 router.get("/:uuid.:ext?", function(req, res) {
+  console.log("BRAND NWE REQUEST AFTER THIS")
   var uuid = (req.params.uuid || "");
   var size = parseInt(req.query.size) || config.default_size;
   var def = req.query.default;
@@ -38,6 +39,7 @@ router.get("/:uuid.:ext?", function(req, res) {
 
   try {
     helpers.get_avatar(uuid, helm, size, function(err, status, image, hash) {
+      console.log("WAS CALLED BACK")
       logging.log(uuid + " - " + human_status[status]);
       if (err) {
         logging.error(err);
