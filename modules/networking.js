@@ -112,9 +112,11 @@ exp.get_username_url = function(name, type, callback) {
 // +type+ specifies which to retrieve
 exp.get_uuid_url = function(profile, type, callback) {
   if (type == 1) {
-    callback(exp.extract_skin_url(profile));
+    var url = exp.extract_skin_url(profile)
+    callback(url ? url : null);
   } else if (type == 2) {
-    callback(exp.extract_cape_url(profile));
+    var url = exp.extract_cape_url(profile)
+    callback(url ? url : null);
   }
 };
 

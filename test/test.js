@@ -78,18 +78,20 @@ describe("Crafatar", function() {
       assert.strictEqual(helpers.uuid_valid("a"), true);
       done();
     });
-    // it("should not exist (uuid)", function(done) {
-    //   networking.get_skin_url("00000000000000000000000000000000", null, function(err, profile) {
-    //     assert.strictEqual(err, null);
-    //     done();
-    //   });
-    // });
-    // it("should not exist (username)", function(done) {
-    //   networking.get_skin_url("Steve", null, function(err, profile) {
-    //     assert.strictEqual(err, null);
-    //     done();
-    //   });
-    // });
+    it("should not exist (uuid)", function(done) {
+      networking.get_profile("00000000000000000000000000000000", function(err, profile) {
+        networking.get_uuid_url(profile, 1, function(err, url) {
+          assert.strictEqual(url, null);
+          done();
+        });
+      });
+    });
+    it("should not exist (username)", function(done) {
+      networking.get_username_url("Steve", 1, function(err, profile) {
+        assert.strictEqual(err, null);
+        done();
+      });
+    });
   });
 
   describe("Avatar", function() {
@@ -121,7 +123,7 @@ describe("Crafatar", function() {
         assert.strictEqual(err.code, "ETIMEDOUT");
         config.http_timeout = original_timeout;
         done();
-      })
+      });
     });
     it("should time out on username info download", function(done) {
       var original_timeout = config.http_timeout;
