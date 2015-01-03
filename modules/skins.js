@@ -109,8 +109,7 @@ exp.save_image = function(buffer, outpath, callback) {
     if (err) {
       callback(err);
     } else {
-      image.batch()
-      .writeFile(outpath, function(err) {
+      image.writeFile(outpath, function(err) {
         if (err) {
           callback(err);
         } else {

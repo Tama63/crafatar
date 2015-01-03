@@ -48,16 +48,17 @@ exp.extract_cape_url = function(profile) {
 // specified. +callback+ contains the body, response,
 // and error buffer. get_from helper method is available
 exp.get_from_options = function(url, options, callback) {
+  logging.log("requesting url " + url);
   request.get({
     url: url,
     headers: {
       "User-Agent": "https://crafatar.com"
     },
-    timeout: options["timeout"] || config.http_timeout,
-    encoding: options["encoding"] || null,
-    followRedirect: options["followRedirect"] || false
+    timeout: (options["timeout"] || config.http_timeout),
+    encoding: (options["encoding"] || null),
+    followRedirect: (options["followRedirect"] || false)
   }, function(error, response, body) {
-    if (!error && response.statusCode == 200) {
+    if (!error && (response.statusCode == 200 || response.statusCode == 301)) {
       // skin_url received successfully
       logging.log(url + " url received");
       callback(body, response, error);
@@ -74,6 +75,7 @@ exp.get_from_options = function(url, options, callback) {
       callback(null, response, null);
     } else {
       logging.error(url + " Unknown error:");
+      logging.log(response.statusCode)
       //logging.error(response);
       callback(body || "Unknown error", response, null);
     }

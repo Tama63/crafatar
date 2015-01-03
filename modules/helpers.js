@@ -31,91 +31,102 @@ function store_images(uuid, details, whichhash, callback) {
           hashes = {};
         for (i = 0; i < urls.length; i++) {
           var url = urls[i];
-          logging.debug("URL: " + url);
-          if (url) {
-            var hash = get_hash(url);
-            var raw_type = (url == skin_url ? "skin" : "cape");
-            logging.debug("TYPE IS: " + raw_type)
-            var type = details != null ? (url == urls[0] ? details.skin : details.cape) : null;
-            if (details && type == hash) {
-              logging.log(uuid + " hash has not changed for " + raw_type);
-              cache.update_timestamp(uuid, hash);
-              if (whichhash == raw_type) {
-                callback(null, hash);
-                continue;
-              }
-            } else {
-              logging.log(uuid + " new " + raw_type + " hash: " + hash);
-              var verifypath = null;
-              var facepath = null;
-              var helmpath = null;
-              if (raw_type == "skin") {
-                facepath = __dirname + "/../" + config.faces_dir + hash + ".png";
-                helmpath = __dirname + "/../" + config.helms_dir + hash + ".png";
-                verifypath = facepath;
-              } else if (raw_type == "cape") {
-                verifypath = __dirname + "/../" + config.capes_dir + hash + ".png";
-              }
-              raw_type == "cape" ? hashes["cape"] = hash : hashes["skin"] = hash;
-              if (fs.existsSync(verifypath)) {
-                logging.log(uuid + " " + raw_type + " already exists, not downloading");
+          (function(url) {
+            logging.debug("URL: " + url);
+            if (url) {
+              var hash = get_hash(url);
+              var raw_type = (url == skin_url ? "skin" : "cape");
+              logging.debug("TYPE IS: " + raw_type)
+              var type = details != null ? (url == urls[0] ? details.skin : details.cape) : null;
+              if (details && type == hash) {
+                logging.log(uuid + " hash has not changed for " + raw_type);
+                cache.update_timestamp(uuid, hash);
                 if (whichhash == raw_type) {
                   callback(null, hash);
-                  continue;
+                  return;
                 }
               } else {
+                logging.log(uuid + " new " + raw_type + " hash: " + hash);
+                var verifypath = null;
+                var facepath = null;
+                var helmpath = null;
+                console.log("RAW_TYPE: " + raw_type)
                 if (raw_type == "skin") {
-                  networking.get_from(skin_url, function(img, response, err) {
-                    if (err || !img) {
-                      if (raw_type == whichhash) {
-                        callback(err, null);
-                      }
-                    } else {
-                      skins.extract_face(img, facepath, function(err) {
-                        if (err) {
-                          logging.error(err);
-                          if (whichhash == raw_type) {
-                            callback(err);
-                          }
-                        } else {
-                          logging.log(uuid + " face extracted");
-                          logging.debug(facepath);
-                          skins.extract_helm(facepath, img, helmpath, function(err) {
-                            logging.log(uuid + " helm extracted");
-                            logging.debug(helmpath);
-                            if (whichhash == raw_type) {
-                              callback(err, hash);
-                            }
-                          });
-                        }
-                      });
-                    }
-                  });
+                  facepath = __dirname + "/../" + config.faces_dir + hash + ".png";
+                  helmpath = __dirname + "/../" + config.helms_dir + hash + ".png";
+                  verifypath = facepath;
                 } else if (raw_type == "cape") {
-                  networking.get_from(cape_url, function(img, response, err) {
-                    logging.log(uuid + " downloaded cape");
-                    if (err || !img) {
-                      logging.error(err);
-                      if (whichhash == raw_type) {
-                        callback(err, null);
-                      }
-                    } else {
-                      skins.save_image(img, verifypath, function(err) {
-                        logging.log(uuid + " cape saved");
-                        if (whichhash == raw_type) {
-                          callback(err, hash);
+                  verifypath = __dirname + "/../" + config.capes_dir + hash + ".png";
+                }
+                raw_type == "cape" ? hashes["cape"] = hash : hashes["skin"] = hash;
+                if (fs.existsSync(verifypath)) {
+                  logging.log(uuid + " " + raw_type + " already exists, not downloading");
+                  if (whichhash == raw_type) {
+                    callback(null, hash);
+                    return;
+                  }
+                } else {
+                  if (raw_type == "skin") {
+                    console.log("RUNNING ")
+                    networking.get_from(skin_url, function(img, response, err) {
+                      if (err || !img) {
+                        if (raw_type == whichhash) {
+                          callback(err, null);
+                          return;
                         }
-                      });
-                    }
-                  });
+                      } else {
+                        skins.extract_face(img, verifypath, function(err) {
+                          if (err) {
+                            logging.error(err);
+                            if (whichhash == raw_type) {
+                              callback(err);
+                              return;
+                            }
+                          } else {
+                            logging.log(uuid + " face extracted");
+                            logging.debug(verifypath);
+                            skins.extract_helm(verifypath, img, helmpath, function(err) {
+                              logging.log(uuid + " helm extracted");
+                              logging.debug(helmpath);
+                              if (whichhash == raw_type) {
+                                callback(err, hash);
+                                return;
+                              }
+                            });
+                          }
+                        });
+                      }
+                    });
+                  } else if (raw_type == "cape") {
+                    console.log("CAPE URL: " + cape_url)
+                    networking.get_from(cape_url, function(img, response, err) {
+                      logging.log(uuid + " downloaded cape");
+                      if (err || !img) {
+                        logging.error(err);
+                        if (whichhash == raw_type) {
+                          callback(err, null);
+                          return;
+                        }
+                      } else {
+                        skins.save_image(img, verifypath, function(err) {
+                          logging.log(uuid + " cape saved");
+                          if (whichhash == raw_type) {
+                            callback(err, hash);
+                            return;
+                          }
+                        });
+                      }
+                    });
+                  }
                 }
               }
+            } else {
+              if (whichhash == raw_type) {
+                callback(null, null);
+                return;
+              }
             }
-          } else {
-            if (whichhash == raw_type) {
-              callback(null, null);
-            }
-          }
+          })(url);
         }
         cache.save_hash(uuid, hashes["skin"], hashes["cape"]);
       });
@@ -142,9 +153,6 @@ exp.uuid_valid = function(uuid) {
 exp.get_image_hash = function(uuid, raw_type, callback) {
   cache.get_details(uuid, function(err, details) {
     var type = (details != null ? (raw_type == "skin" ? details.skin : details.cape) : null);
-    console.log("TYPES")
-    console.log(type)
-    console.log(raw_type)
     if (err) {
       callback(err, -1, null);
     } else {
