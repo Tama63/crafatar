@@ -172,24 +172,24 @@ exp.get_skin = function(url, callback) {
   });
 };
 
-exp.save_skin = function(uuid, hash, outpath, callback) {
+exp.save_texture = function(uuid, hash, outpath, callback) {
   if (hash) {
-    var skinurl = "http://textures.minecraft.net/texture/" + hash;
-    exp.get_from(skinurl, function(img, response, err) {
+    var textureurl = "http://textures.minecraft.net/texture/" + hash;
+    exp.get_from(textureurl, function(img, response, err) {
       if (err) {
-        logging.error("error while downloading skin");
-        callback(err, null);
+        logging.error("error while downloading texture");
+        callback(err, response, null);
       } else {
         fs.writeFile(outpath, img, "binary", function(err) {
           if (err) {
             logging.log(err);
           }
-          callback(null, img);
+          callback(err, response, img);
         });
       }
     });
   } else {
-    callback(null, null);
+    callback(null, null, null);
   }
 };
 

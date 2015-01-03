@@ -18,7 +18,7 @@ router.get("/:uuid.:ext?", function (req, res) {
   uuid = uuid.replace(/-/g, "");
 
   try {
-    helpers.get_cape(uuid, function (err, hash, image) {
+    helpers.get_cape(uuid, function(err, hash, image) {
       logging.log(uuid);
       if (err) {
         logging.error(err);
